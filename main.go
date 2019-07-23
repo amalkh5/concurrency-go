@@ -84,15 +84,15 @@ func main() {
 	// read the url
 	filename := flag.String("filename", "url.csv", "file name of the URLs link")
 	flag.Parse() //parse flags from command line.
-
-	if *filename != " " {
+	fmt.Println(len(*filename))
+	if len(*filename) != 0 {
 
 		//read from file and print the result ✅
 		// store the result ✅
 		urls = readFromFile(*filename)
 
 		// make a channel ✅.
-		jobs := make(chan int, len(urls))
+		jobs := make(chan int, 10)
 		results := make(chan int, len(urls))
 
 		//  Workers
