@@ -14,13 +14,10 @@ type Job struct {
 	id  int
 	url string
 }
-type Result struct {
-	jobs         Job
-	WorkerResult int
-}
+
 type Pool struct {
 	jobs    chan Job
-	results chan Result
+	results chan string
 	done    chan bool
 }
 
@@ -29,7 +26,7 @@ func NewPool() *Pool {
 	log.Println("Stating new pool.")
 	p := &Pool{}
 	p.jobs = make(chan Job, 10)
-	p.results = make(chan Result, 10)
+	p.results = make(chan string, 10)
 	return p
 
 }
@@ -64,18 +61,18 @@ func (p *Pool) allocate(urls []string) {
 func (p *Pool) worker() {
 	defer close(p.results)
 	for job := range p.jobs {
+		start := time.Now()
 		fmt.Println("working on job ID ", job.id)
-		size := getBodySize(job.url)
-		fmt.Println("Completed work on job", job.id, " with html size of", size)
-		output := Result{job, size}
-		p.results <- output
+		nbytes := getBodySize(job.url)
+		secs := time.Since(start).Seconds()
+		p.results <- fmt.Sprintf("fetch time %.2fs page sizes %7d  url %s", secs, nbytes, job.url)
 	}
 }
 
 func (p *Pool) collectResults() {
 	// Wait for the results
 	for result := range p.results {
-		fmt.Println("Result received from worker: ", result.WorkerResult)
+		fmt.Println("Result received from worker: ", result)
 	}
 	p.done <- true
 }
@@ -96,6 +93,7 @@ func getBodySize(url string) int {
 	defer rs.Body.Close()
 
 	bodyBytes, err := ioutil.ReadAll(rs.Body)
+
 	if err != nil {
 		log.Println(err)
 	}
